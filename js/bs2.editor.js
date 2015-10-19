@@ -1,5 +1,14 @@
 /**
- *
+ * Wysiwyg div.contenteditable editor as jquery plugin without any styles
+ * Use own styles.
+ * Usage:
+ * $(selector).bs2edior({
+ * 	buttons:{ // elements to control text - just to assign action - NO STYLES added
+ *		link: selector, //default '.bs2editor-link'
+ * 		bold: selector  //default '.bs2editor-bold'
+ *  },
+ *	urlRegex:/http(s?):\/\/($|[^ ]+)/ig // RegExp to search urls for autolink
+ * });
  */
 (function($) {
 	if ($.fn.bs2editor === undefined) {
@@ -176,45 +185,3 @@
 	}
 	return $.fn.bs2editor;
 })(jQuery);
-
-/*
-$(document).ready(function(){
-    var ta=$(".textarea-1");
-    var controlledText='';
-    ta.on("keydown",function(e){
-        console.debug("keydown::"+e.keyCode);
-        if(e.keyCode==8)controlledText=controlledText.substr(0,controlledText.length-1);
-    }).on("keypress",function(e){
-        //ta.html(highlightUrls(ta.html()));return;
-        var key=e.keyCode,
-        pattern=/[\,\s;]/i;
-        if(pattern.test(String.fromCharCode(key))){
-            controlledText='';
-            return;
-        }
-        controlledText+=String.fromCharCode(key);
-        console.debug("word:"+controlledText);
-        if(isURL(controlledText)){
-            var html='<a href="'+controlledText+'">'+controlledText+'</a>';
-            try {
-                var selection = window.getSelection(),
-                range = selection.getRangeAt(0),
-                linkNode = document.createElement('a'),
-                linkHref = document.createAttribute('href',controlledText),
-                linkText = document.createTextNode(controlledText),
-                insertion = document.createDocumentFragment();
-                linkNode.appendChild(linkHref).appendChild(linkText);
-                insertion.appendChild(linkNode);
-                console.debug("selection:["+selection.toString()+"]");
-                console.debug("range:["+range.toString()+"]");
-                range.deleteContents();
-                range.insertNode(insertion);
-            } catch (z) {
-                try {
-                    document.selection.createRange().pasteHTML(html);
-                } catch (z) {}
-            }
-        }
-    });
-});
-*/
