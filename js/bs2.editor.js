@@ -94,7 +94,8 @@
 		function surroundInElement(el, regex, surrounderCreateFunc, shouldSurroundFunc) {
 			var child = el.lastChild;
 			while (child) {
-				if (child.nodeType == 1 && shouldSurroundFunc(el)) {
+				//if (child.nodeType == 1 && shouldSurroundFunc(el)) {
+				if (child.nodeType == 1 && shouldSurroundFunc(child)) {
 					surroundInElement(child, regex, surrounderCreateFunc, shouldSurroundFunc);
 				} else if (child.nodeType == 3) {
 					surroundMatchingText(child, regex, surrounderCreateFunc);
@@ -114,20 +115,28 @@
 				surroundingNode = surrounderCreateFunc(matchedTextNode.cloneNode(true));
 				parent.insertBefore(surroundingNode, matchedTextNode);
 				parent.removeChild(matchedTextNode);
+				//console.debug("replacement occurs. "+result[0]);
 			}
 		}
 		$.bs2editor={
 			defaults:{
 				buttons:{
 					bold: '.bs2editor-bold',
-					link: '.bs2editor-link'
+					italic: '.bs2editor-italic',
+					strike: '.bs2editor-strike',
+					link: '.bs2editor-link',
+					linkDropDown: '.bs2editor-link-dropdown'
 				},
-				urlRegex:/http(s?):\/\/($|[^ ]+)/ig
+				urlRegex:/\bhttp(s?):\/\/([\da-z\-\.\&\?\=\%\;/\+\:]+)\.([\da-z]){2,}([\da-z\-\.\&\?\=\%\;/\+\:\#]*)?($|\s|)\b/ig
 			},
 			keyCode: {
 				ALT: 18, BACKSPACE: 8, CAPS_LOCK: 20, COMMA: 188, COMMAND: 91, COMMAND_LEFT: 91, COMMAND_RIGHT: 93, CONTROL: 17, DELETE: 46, DOWN: 40, END: 35, ENTER: 13, ESCAPE: 27, HOME: 36, INSERT: 45, LEFT: 37, MENU: 93, NUMPAD_ADD: 107, NUMPAD_DECIMAL: 110, NUMPAD_DIVIDE: 111, NUMPAD_ENTER: 108,
 				NUMPAD_MULTIPLY: 106, NUMPAD_SUBTRACT: 109, PAGE_DOWN: 34, PAGE_UP: 33, PERIOD: 190, RIGHT: 39, SHIFT: 16, SPACE: 32, TAB: 9, UP: 38, WINDOWS: 91
-			}
+			},
+			commandKeys:[/*ALT*/18, /*BACKSPACE*/8, /*CAPS_LOCK*/20, /*COMMA*/188, /*COMMAND*/91, /*COMMAND_LEFT*/91, /*COMMAND_RIGHT*/93, /*CONTROL*/17, /*DELETE*/46, /*DOWN*/40, /*END*/35, /*ENTER*/13, /*ESCAPE*/27, /*HOME*/36, /*INSERT*/45,
+				/*LEFT*/ 37, /*MENU*/93, /*NUMPAD_ADD*/107, /*NUMPAD_DECIMAL*/110, /*NUMPAD_DIVIDE*/111, /*NUMPAD_ENTER*/108,
+				/*NUMPAD_MULTIPLY*/106, /*NUMPAD_SUBTRACT*/109, /*PAGE_DOWN*/34, /*PAGE_UP*/33, /*PERIOD*/190, /*RIGHT*/39, /*SHIFT*/16, /*SPACE*/32, /*TAB*/9, /*UP*/38, /*WINDOWS*/91
+			]
 		}
 		$.fn.bs2editor = function(options) {
 			return this.each(function(options) {
@@ -141,20 +150,26 @@
 	            $(document).on('click', function(event) {
 					if (($(event.target).closest(t).length == 1)) return;
 				});
-				t.on('keyup blur paste',function(){
+				t.on('keyup blur paste',function(e){
 					surroundInElement(
 						t.get(0)
 						,opts.urlRegex
 						,(function(matchedTextNode) {
 							var el = document.createElement("a");
 							el.href = matchedTextNode.data;
+							el.style = "cursor:pointer;";
 							el.target = "_blank";
 							el.appendChild(matchedTextNode);
 							return el;
 						})
 						,(function(el){return el.tagName != "A";})
 					);
-				    restoreSelection(t.get(0), saveSelection(t.get(0)));
+					var key=(e.keyCode)?e.keyCode:13;
+					console.debug(key+" "+$.bs2editor.commandKeys[key])
+					if(!$.bs2editor.commandKeys[key]){
+
+						restoreSelection(t.get(0), saveSelection(t.get(0)));
+					}
 				});
 
 				this.btnBold = (typeof opts.buttons.bold == "string") ?findButtonBySelector(t,opts.buttons.bold) :opts.buttons.bold;
@@ -169,15 +184,46 @@
 					}
 		        });
 
-				this.btnLink = (typeof opts.buttons.bold == "string") ?findButtonBySelector(t,opts.buttons.link) :opts.buttons.link;
-				this.btnLink.on('click',function(e){
+				this.btnItalic = (typeof opts.buttons.italic == "string") ?findButtonBySelector(t,opts.buttons.italic) :opts.buttons.italic;
+				this.btnItalic.on('click',function(e){
 					e.preventDefault();
 			        var sel=getSelected();
 			        if(sel){
 			            var txt=sel.toString();
 			            var rep = sel.getRangeAt(0);
 			            rep.deleteContents();
-			            rep.insertNode(rep.createContextualFragment('<a href="'+txt+'">'+txt+'</a>'))
+			            rep.insertNode(rep.createContextualFragment('<i>'+txt+'</i>'))
+					}
+		        });
+
+				this.btnLink = (typeof opts.buttons.link == "string") ?findButtonBySelector(t,opts.buttons.link) :opts.buttons.link;
+				this.linkDropDown = (typeof opts.buttons.linkDropDown == "string") ?findButtonBySelector(t,opts.buttons.linkDropDown) :opts.buttons.linkDropDown;
+				var linkDropDown=this.linkDropDown;
+				this.btnLink.on('click',function(e){
+					e.preventDefault();
+			        var sel=getSelected();
+			        if(sel){
+			            var txt=sel.toString(),
+						rep = sel.getRangeAt(0),
+						href=txt;
+						function replace(rep,href,txt){
+							rep.deleteContents();
+				            rep.insertNode(rep.createContextualFragment('<a href="'+href+'">'+txt+'</a>'));
+						}
+						console.debug(typeof linkDropDown);
+			            if(linkDropDown){
+							linkDropDown.show();
+							linkDropDown.find('input[type=button].btn').on('click',function(e){
+								e.preventDefault();
+								href=linkDropDown.find('input[type=text].text').val();
+								linkDropDown.hide();
+								replace(rep,href,txt);
+							});
+						}else{
+							href=prompt("Введите адрес для ссылки");
+							replace(rep,href,txt);
+						}
+
 			        }
 				});
 	        });

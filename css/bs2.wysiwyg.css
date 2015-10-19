@@ -30,3 +30,6 @@ form input {
   -moz-border-radius: 0.4em;
   border-radius: 0.4em;
 }
+.bs2editor-link-dropdown {
+  display: none;
+}

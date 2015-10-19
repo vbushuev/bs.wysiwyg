@@ -5,6 +5,6 @@ $(selector).bs2edior({
 	buttons:{ // elements to control text - just to assign action - NO STYLES added
  		link: selector, //default '.bs2editor-link'
 		bold: selector  //default '.bs2editor-bold'
- },
+        },
  	urlRegex:/http(s?):\/\/($|[^ ]+)/ig // RegExp to search urls for autolink
 });
