@@ -1,3 +1,12 @@
 $(document).ready(function(){
-    $(".textarea").bs2editor();
+    $(".bs2editor").bs2editor({
+        buttons:{
+            bold:'.-bold',
+            link:'.-link',
+        },
+        layouts:{
+            linkDropDown:'.-link-dropdown',
+            textarea:'.bs2editor-textarea'
+        }
+    });
 });
