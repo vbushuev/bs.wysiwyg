@@ -9,19 +9,20 @@
  *  },
  *	urlRegex:/http(s?):\/\/($|[^ ]+)/ig // RegExp to search urls for autolink
  * });
+ *
  */
 (function($) {
 	if ($.fn.bs2editor === undefined) {
 		function getSelected(){
 			var txt = (window.getSelection)?window.getSelection().toString():document.selection.createRange().text;
 			if(!txt.length)return false;
-			console.debug("selection "+txt);
+
 			return window.getSelection();
 		}
 		function findButtonBySelector(t,selector){
 			var b=t.parent().find(selector.toString());
 			b=(b.length>1)?b[0]:b;
-			if(!b.length)console.warn("no "+selector+" button found");
+			if(!b.length)console.warn("no "+selector+" selector found");
 			return b;
 		}
 		function isUrl(str) {
@@ -115,8 +116,11 @@
 				surroundingNode = surrounderCreateFunc(matchedTextNode.cloneNode(true));
 				parent.insertBefore(surroundingNode, matchedTextNode);
 				parent.removeChild(matchedTextNode);
-				//console.debug("replacement occurs. "+result[0]);
+				//
 			}
+		}
+		function togleText(t,ta){
+			ta.val(t.html());
 		}
 		$.bs2editor={
 			defaults:{
@@ -124,10 +128,24 @@
 					bold: '.bs2editor-bold',
 					italic: '.bs2editor-italic',
 					strike: '.bs2editor-strike',
-					link: '.bs2editor-link',
-					linkDropDown: '.bs2editor-link-dropdown'
+					link: '.bs2editor-link'
+				},
+				layouts:{
+					linkDropDown: '.bs2editor-link-dropdown',
+					textarea: '.bs2editor-textarea'
 				},
 				urlRegex:/\bhttp(s?):\/\/([\da-z\-\.\&\?\=\%\;/\+\:]+)\.([\da-z]){2,}([\da-z\-\.\&\?\=\%\;/\+\:\#]*)?($|\s|)\b/ig
+			},
+			smiles:{
+				'=)'  : '<img src="/sodabox_resources/images/svg/smiles/smile1.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				'=D'  : '<img src="/sodabox_resources/images/svg/smiles/smile2.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				'=-D' : '<img src="/sodabox_resources/images/svg/smiles/smile2.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				';D'  : '<img src="/sodabox_resources/images/svg/smiles/smile3.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				';)'  : '<img src="/sodabox_resources/images/svg/smiles/smile3.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				':)'  : '<img src="/sodabox_resources/images/svg/smiles/smile4.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				':-)' : '<img src="/sodabox_resources/images/svg/smiles/smile4.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				':|'  : '<img src="/sodabox_resources/images/svg/smiles/smile10.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
+				':-|' : '<img src="/sodabox_resources/images/svg/smiles/smile10.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>'
 			},
 			keyCode: {
 				ALT: 18, BACKSPACE: 8, CAPS_LOCK: 20, COMMA: 188, COMMAND: 91, COMMAND_LEFT: 91, COMMAND_RIGHT: 93, CONTROL: 17, DELETE: 46, DOWN: 40, END: 35, ENTER: 13, ESCAPE: 27, HOME: 36, INSERT: 45, LEFT: 37, MENU: 93, NUMPAD_ADD: 107, NUMPAD_DECIMAL: 110, NUMPAD_DIVIDE: 111, NUMPAD_ENTER: 108,
@@ -139,9 +157,9 @@
 			]
 		}
 		$.fn.bs2editor = function(options) {
-			return this.each(function(options) {
+			return this.each(function() {
 	            var t = $(this),
-	            data = t.data(),
+				data = t.data(),
 				opts=$.extend(true,{},$.bs2editor.defaults,options);
 
 				if (data.bs2editorInitialized) return;
@@ -150,7 +168,13 @@
 	            $(document).on('click', function(event) {
 					if (($(event.target).closest(t).length == 1)) return;
 				});
+				var ta=(typeof opts.layouts.textarea == "string") ?findButtonBySelector(t,opts.layouts.textarea) :opts.layouts.textarea;
+				t.html(ta.val());
+				t.parent('form').on('submit',function(){
+					togleText(t,ta);
+				});
 				t.on('keyup blur paste',function(e){
+					// for urls
 					surroundInElement(
 						t.get(0)
 						,opts.urlRegex
@@ -164,13 +188,25 @@
 						})
 						,(function(el){return el.tagName != "A";})
 					);
+					// for smiles
+					surroundInElement(
+						t.get(0)
+						,/[\:\;\=]{1}\-{0,1}[\)\(\|D]{1}/ig
+						,(function(matchedTextNode) {
+							console.debug(matchedTextNode.data);
+							if($.bs2editor.smiles[matchedTextNode.data]){
+								return $($.bs2editor.smiles[matchedTextNode.data]).get(0);
+							}
+							return matchedTextNode;
+						})
+						,(function(el){return el.tagName != "IMG";})
+					);
 					var key=(e.keyCode)?e.keyCode:13;
-					console.debug(key+" "+$.bs2editor.commandKeys[key])
-					if(!$.bs2editor.commandKeys[key]){
-
-						restoreSelection(t.get(0), saveSelection(t.get(0)));
-					}
+					if(!$.bs2editor.commandKeys[key])restoreSelection(t.get(0), saveSelection(t.get(0)));
+					togleText(t,ta);
 				});
+
+
 
 				this.btnBold = (typeof opts.buttons.bold == "string") ?findButtonBySelector(t,opts.buttons.bold) :opts.buttons.bold;
 				this.btnBold.on('click',function(e){
@@ -197,7 +233,7 @@
 		        });
 
 				this.btnLink = (typeof opts.buttons.link == "string") ?findButtonBySelector(t,opts.buttons.link) :opts.buttons.link;
-				this.linkDropDown = (typeof opts.buttons.linkDropDown == "string") ?findButtonBySelector(t,opts.buttons.linkDropDown) :opts.buttons.linkDropDown;
+				this.linkDropDown = (typeof opts.layouts.linkDropDown == "string") ?findButtonBySelector(t,opts.layouts.linkDropDown) :opts.layouts.linkDropDown;
 				var linkDropDown=this.linkDropDown;
 				this.btnLink.on('click',function(e){
 					e.preventDefault();
@@ -210,13 +246,15 @@
 							rep.deleteContents();
 				            rep.insertNode(rep.createContextualFragment('<a href="'+href+'">'+txt+'</a>'));
 						}
-						console.debug(typeof linkDropDown);
+
 			            if(linkDropDown){
 							linkDropDown.show();
+							linkDropDown.toggleClass('hide','show');
 							linkDropDown.find('input[type=button].btn').on('click',function(e){
 								e.preventDefault();
 								href=linkDropDown.find('input[type=text].text').val();
 								linkDropDown.hide();
+								linkDropDown.toggleClass('show','hide');
 								replace(rep,href,txt);
 							});
 						}else{
@@ -226,7 +264,7 @@
 
 			        }
 				});
-	        });
+			});
 	    }
 	}
 	return $.fn.bs2editor;
