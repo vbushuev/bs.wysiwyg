@@ -119,7 +119,7 @@
 				//
 			}
 		}
-		function togleText(t,ta){
+		function toggleText(t,ta){
 			ta.val(t.html());
 		}
 		$.bs2editor={
@@ -134,7 +134,7 @@
 					linkDropDown: '.bs2editor-link-dropdown',
 					textarea: '.bs2editor-textarea'
 				},
-				urlRegex:/\bhttp(s?):\/\/([\da-z\-\.\&\?\=\%\;/\+\:]+)\.([\da-z]){2,}([\da-z\-\.\&\?\=\%\;/\+\:\#]*)?($|\s|)\b/ig
+				urlRegex:/http(s?):\/\/([\da-z\-\.\&\?\=\%\;/\+\:]+)\.([\da-z]){2,}([\da-z\-\.\&\?\=\%\;/\+\:\#]*)?($|\s|)\s/ig
 			},
 			smiles:{
 				'=)'  : '<img src="/sodabox_resources/images/svg/smiles/smile1.svg" style="display:inline-block;width:1.4em;height:1.4em;"/>',
@@ -171,7 +171,7 @@
 				var ta=(typeof opts.layouts.textarea == "string") ?findButtonBySelector(t,opts.layouts.textarea) :opts.layouts.textarea;
 				t.html(ta.val());
 				t.parent('form').on('submit',function(){
-					togleText(t,ta);
+					toggleText(t,ta);
 				});
 				t.on('keyup blur paste',function(e){
 					// for urls
@@ -180,7 +180,7 @@
 						,opts.urlRegex
 						,(function(matchedTextNode) {
 							var el = document.createElement("a");
-							el.href = matchedTextNode.data;
+							el.href = matchedTextNode.data.replace(/\s/g,"");
 							el.style = "cursor:pointer;";
 							el.target = "_blank";
 							el.appendChild(matchedTextNode);
@@ -193,7 +193,6 @@
 						t.get(0)
 						,/[\:\;\=]{1}\-{0,1}[\)\(\|D]{1}/ig
 						,(function(matchedTextNode) {
-							console.debug(matchedTextNode.data);
 							if($.bs2editor.smiles[matchedTextNode.data]){
 								return $($.bs2editor.smiles[matchedTextNode.data]).get(0);
 							}
@@ -203,7 +202,7 @@
 					);
 					var key=(e.keyCode)?e.keyCode:13;
 					if(!$.bs2editor.commandKeys[key])restoreSelection(t.get(0), saveSelection(t.get(0)));
-					togleText(t,ta);
+					toggleText(t,ta);
 				});
 
 
